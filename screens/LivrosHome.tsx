@@ -106,11 +106,11 @@ export default function Home(props: any) {
       </Text>
 
       <Text style={styles.title}>
-        Meus Livros
+        Biblioteca Digital 
       </Text>
 
       <Text style={styles.subtitle}>
-        Sua pequena biblioteca digital ✨
+        Sua pequena biblioteca em uma pequena tela✨
       </Text>
 
     </View>

@@ -45,9 +45,7 @@ export default function EditarLivro(props: any) {
       } else {
         setMensagem('Livro não encontrado.');
 
-        setTimeout(() => {
-          props.navigation.goBack();
-        }, 1000);
+       
       }
     } catch (error) {
       console.error('ERRO AO CARREGAR LIVRO:', error);
@@ -85,9 +83,7 @@ export default function EditarLivro(props: any) {
 
       setMensagem('Atualizado com sucesso!');
 
-      setTimeout(() => {
-        props.navigation.goBack();
-      }, 1000);
+      
 
     } catch (error) {
       console.error('ERRO AO ATUALIZAR LIVRO:', error);

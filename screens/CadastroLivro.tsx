@@ -41,13 +41,11 @@ export default function CadastroLivro(props: any) {
         1
       );
 
-      // Mostra a mensagem
+      
       setMensagem('Livro salvo com sucesso!');
 
-      // Aguarda um pouco e volta para LivroHome
-      setTimeout(() => {
-        props.navigation.navigate('LivroHome');
-      }, 1000);
+      
+  
 
     } catch (error) {
       console.error('ERRO AO SALVAR LIVRO:', error);
