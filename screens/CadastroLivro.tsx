@@ -1,83 +1,92 @@
+
 import {
   View,
   Text,
   TextInput,
   Pressable,
   StyleSheet,
-  Alert,
 } from 'react-native';
 
 import { useState } from 'react';
-
 import { useSQLiteContext } from 'expo-sqlite';
 
 export default function CadastroLivro(props: any) {
-
   const db = useSQLiteContext();
 
   const [nome, setNome] = useState('');
   const [autor, setAutor] = useState('');
+  const [mensagem, setMensagem] = useState('');
 
   async function salvarLivro() {
-
     if (!nome.trim()) {
-
-      Alert.alert(
-        'Atenção',
-        'Informe o nome do livro.'
-      );
-
+      setMensagem('Informe o nome do livro.');
       return;
     }
 
     if (!autor.trim()) {
-
-      Alert.alert(
-        'Atenção',
-        'Informe o autor.'
-      );
-
+      setMensagem('Informe o autor.');
       return;
     }
 
-    await db.runAsync(
-      `
-      INSERT INTO livros
-      (nome, autor, lido)
-      VALUES (?, ?, ?)
-      `,
-      nome.trim(),
-      autor.trim(),
-      0
-    );
+    try {
+      await db.runAsync(
+        `
+        INSERT INTO livros
+        (nome, autor, lido, usuario_id)
+        VALUES (?, ?, ?, ?)
+        `,
+        nome.trim(),
+        autor.trim(),
+        0,
+        1
+      );
 
-    Alert.alert(
-      'Sucesso',
-      'Livro cadastrado!',
-      [
-        {
-          text: 'OK',
-          onPress: () =>
-            props.navigation.goBack(),
-        },
-      ]
-    );
+      // Mostra a mensagem
+      setMensagem('Livro salvo com sucesso!');
+
+      // Aguarda um pouco e volta para LivroHome
+      setTimeout(() => {
+        props.navigation.navigate('LivroHome');
+      }, 1000);
+
+    } catch (error) {
+      console.error('ERRO AO SALVAR LIVRO:', error);
+
+      setMensagem(
+        `Erro ao salvar o livro: ${String(error)}`
+      );
+    }
   }
 
   return (
-    <View style={styles.container}>
+     <View style={styles.container}>
 
-      <Text style={styles.title}>
-        Novo Livro
+    <View style={styles.header}>
+
+      <Text style={styles.emoji}>
+        📚
       </Text>
 
+      <Text style={styles.title}>
+        Novo livro
+      </Text>
+
+      <Text style={styles.subtitle}>
+        Cadastre um novo livro na sua biblioteca ✨
+      </Text>
+
+    </View>
+
+    <View style={styles.form}>
+
       <Text style={styles.label}>
-        Nome
+        Nome do livro
       </Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Digite o nome do livro"
+        placeholder="Ex.: O Pequeno Príncipe"
+        placeholderTextColor="#aaa"
         value={nome}
         onChangeText={setNome}
       />
@@ -88,21 +97,41 @@ export default function CadastroLivro(props: any) {
 
       <TextInput
         style={styles.input}
-        placeholder="Digite o autor"
+        placeholder="Ex.: Antoine de Saint-Exupéry"
+        placeholderTextColor="#aaa"
         value={autor}
         onChangeText={setAutor}
       />
 
+      {mensagem !== '' && (
+
+        <View style={styles.messageBox}>
+
+          <Text style={styles.message}>
+            {mensagem}
+          </Text>
+
+        </View>
+
+      )}
+
       <Pressable
-        style={styles.button}
+        style={({ pressed }) => [
+          styles.button,
+          pressed && styles.buttonPressed,
+        ]}
         onPress={salvarLivro}
       >
+
         <Text style={styles.buttonText}>
-          Salvar
+          ✓ Salvar livro
         </Text>
+
       </Pressable>
 
     </View>
+
+  </View>
   );
 }
 
@@ -110,43 +139,98 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
+    backgroundColor: '#fff7fb',
     padding: 24,
-    backgroundColor: '#f5f7fb',
+  },
+
+  header: {
+    marginBottom: 30,
+  },
+
+  emoji: {
+    fontSize: 42,
+    marginBottom: 8,
   },
 
   title: {
     fontSize: 30,
-    fontWeight: 'bold',
-    marginBottom: 30,
+    fontWeight: '800',
+    color: '#5b3f50',
+    marginBottom: 6,
+  },
+
+  subtitle: {
+    fontSize: 15,
+    color: '#8d7281',
+  },
+
+  form: {
+    backgroundColor: '#ffffff',
+    padding: 22,
+    borderRadius: 22,
+
+    shadowColor: '#8c6579',
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+
+    elevation: 3,
   },
 
   label: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#65495a',
     marginBottom: 8,
   },
 
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: '#fffafd',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 16,
+    borderColor: '#ead9e3',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
     fontSize: 16,
+    color: '#4f3d47',
     marginBottom: 20,
   },
 
+  messageBox: {
+    backgroundColor: '#f4eafa',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 18,
+  },
+
+  message: {
+    color: '#7a4d78',
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+
   button: {
-    backgroundColor: '#2563eb',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#9b6fa3',
+    paddingVertical: 16,
+    borderRadius: 14,
     alignItems: 'center',
   },
 
+  buttonPressed: {
+    opacity: 0.8,
+  },
+
   buttonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
 
 });
+

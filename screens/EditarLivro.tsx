@@ -1,195 +1,259 @@
+
 import {
   View,
   Text,
   TextInput,
   Pressable,
   StyleSheet,
-  Alert,
 } from 'react-native';
 
-import {
-  useEffect,
-  useState,
-} from 'react';
-
+import { useEffect, useState } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 
 export default function EditarLivro(props: any) {
-
   const db = useSQLiteContext();
 
   const id = props.route.params.id;
 
   const [nome, setNome] = useState('');
   const [autor, setAutor] = useState('');
+  const [mensagem, setMensagem] = useState('');
 
   useEffect(() => {
     carregarLivro();
   }, []);
 
   async function carregarLivro() {
+    try {
+      const livro = await db.getFirstAsync(
+        `
+        SELECT *
+        FROM livros
+        WHERE id = ?
+        `,
+        id
+      ) as {
+        id: number;
+        nome: string;
+        autor: string;
+        lido: number;
+      } | null;
 
-    const livro = await db.getFirstAsync(
-      `
-      SELECT *
-      FROM livros
-      WHERE id = ?
-      `,
-      id
-    ) as {
-      id: number;
-      nome: string;
-      autor: string;
-      lido: number;
-    };
+      if (livro) {
+        setNome(livro.nome);
+        setAutor(livro.autor);
+      } else {
+        setMensagem('Livro não encontrado.');
 
-    if (livro) {
+        setTimeout(() => {
+          props.navigation.goBack();
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('ERRO AO CARREGAR LIVRO:', error);
 
-      setNome(livro.nome);
-      setAutor(livro.autor);
-
-    } else {
-
-      Alert.alert(
-        'Erro',
-        'Livro não encontrado.'
+      setMensagem(
+        `Erro ao carregar o livro: ${String(error)}`
       );
-
-      props.navigation.goBack();
     }
   }
 
   async function atualizarLivro() {
-
     if (!nome.trim()) {
-
-      Alert.alert(
-        'Atenção',
-        'Informe o nome do livro.'
-      );
-
+      setMensagem('Informe o nome do livro.');
       return;
     }
 
     if (!autor.trim()) {
-
-      Alert.alert(
-        'Atenção',
-        'Informe o autor.'
-      );
-
+      setMensagem('Informe o autor.');
       return;
     }
 
-    await db.runAsync(
-      `
-      UPDATE livros
-      SET
-        nome = ?,
-        autor = ?
-      WHERE id = ?
-      `,
-      nome.trim(),
-      autor.trim(),
-      id
-    );
+    try {
+      await db.runAsync(
+        `
+        UPDATE livros
+        SET
+          nome = ?,
+          autor = ?
+        WHERE id = ?
+        `,
+        nome.trim(),
+        autor.trim(),
+        id
+      );
 
-    Alert.alert(
-      'Sucesso',
-      'Livro atualizado com sucesso!',
-      [
-        {
-          text: 'OK',
-          onPress: () =>
-            props.navigation.goBack(),
-        },
-      ]
-    );
+      setMensagem('Atualizado com sucesso!');
+
+      setTimeout(() => {
+        props.navigation.goBack();
+      }, 1000);
+
+    } catch (error) {
+      console.error('ERRO AO ATUALIZAR LIVRO:', error);
+
+      setMensagem(
+        `Erro ao atualizar: ${String(error)}`
+      );
+    }
   }
 
   return (
     <View style={styles.container}>
 
-      <Text style={styles.title}>
-        Editar Livro
-      </Text>
+      <View style={styles.header}>
+        <Text style={styles.emoji}>📚</Text>
 
-      <Text style={styles.label}>
-        Nome
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Digite o nome do livro"
-        value={nome}
-        onChangeText={setNome}
-      />
-
-      <Text style={styles.label}>
-        Autor
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Digite o autor"
-        value={autor}
-        onChangeText={setAutor}
-      />
-
-      <Pressable
-        style={styles.button}
-        onPress={atualizarLivro}
-      >
-        <Text style={styles.buttonText}>
-          Salvar
+        <Text style={styles.title}>
+          Editar livro
         </Text>
-      </Pressable>
 
+        <Text style={styles.subtitle}>
+          Altere as informações do seu livro ✨
+        </Text>
+      </View>
+
+      <View style={styles.form}>
+
+        <Text style={styles.label}>
+          Nome do livro
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Ex.: O Pequeno Príncipe"
+          placeholderTextColor="#aaa"
+          value={nome}
+          onChangeText={setNome}
+        />
+
+        <Text style={styles.label}>
+          Autor
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Ex.: Antoine de Saint-Exupéry"
+          placeholderTextColor="#aaa"
+          value={autor}
+          onChangeText={setAutor}
+        />
+
+        {mensagem !== '' && (
+          <View style={styles.messageBox}>
+            <Text style={styles.message}>
+              {mensagem}
+            </Text>
+          </View>
+        )}
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={atualizarLivro}
+        >
+          <Text style={styles.buttonText}>
+            ✓ Atualizar livro
+          </Text>
+        </Pressable>
+
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
+    backgroundColor: '#fff7fb',
     padding: 24,
-    backgroundColor: '#f5f7fb',
+  },
+
+  header: {
+    marginBottom: 30,
+  },
+
+  emoji: {
+    fontSize: 42,
+    marginBottom: 8,
   },
 
   title: {
     fontSize: 30,
-    fontWeight: 'bold',
-    marginBottom: 30,
+    fontWeight: '800',
+    color: '#5b3f50',
+    marginBottom: 6,
+  },
+
+  subtitle: {
+    fontSize: 15,
+    color: '#8d7281',
+  },
+
+  form: {
+    backgroundColor: '#ffffff',
+    padding: 22,
+    borderRadius: 22,
+    shadowColor: '#8c6579',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
 
   label: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#65495a',
     marginBottom: 8,
   },
 
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: '#fffafd',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 16,
+    borderColor: '#ead9e3',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
     fontSize: 16,
+    color: '#4f3d47',
     marginBottom: 20,
   },
 
+  messageBox: {
+    backgroundColor: '#f4eafa',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 18,
+  },
+
+  message: {
+    color: '#7a4d78',
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+
   button: {
-    backgroundColor: '#2563eb',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#9b6fa3',
+    paddingVertical: 16,
+    borderRadius: 14,
     alignItems: 'center',
   },
 
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  buttonPressed: {
+    opacity: 0.8,
   },
 
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '800',
+  },
 });
+
